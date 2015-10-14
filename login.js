@@ -8,7 +8,7 @@ var users = db.collection('users');
 var crypto = require('crypto');
 
 function hash (password) {
-	return crypto.createhash('sha512').update(password).digest('hex');
+	return crypto.createHash('sha512').update(password).digest('hex');
 }
 
 passport.use(new LocalStrategy(function (username, password, done){
@@ -18,7 +18,7 @@ passport.use(new LocalStrategy(function (username, password, done){
 	if (user) {
 		done(null,user);
 	} else {
-		done(null.false);
+		done(null, false);
 	}
 
 }));
@@ -45,12 +45,65 @@ router.use(require('express-session')({
 router.use(passport.initialize());
 router.use(passport.session());
 
-router.get('/login', function(req,res){
+router.get('/login', function (req,res){
 	res.render('login');
 });
 
-exports.routes = router;
+router.post('/signup', function (req,res){
+	if (users.where({ username: req.body.username }).items.length ===0){
+		var user = {
+			fullname: req.body.fullname,
+			email: req.body.email,
+			username: req.body.username,
+			passwordHash: hash(req.body.password),
+			following : []
+		};
 
+		var userId = users.insert(user);
+
+		req.login(users.get(userId),function (err){
+			if (err) return next(err);
+			res.redirect('/');
+		})
+
+	} else {
+		res.redirect('/login');
+	}
+});
+
+router.post('/login', passport.authenticate('local' ,{
+	successRedirect: '/',
+	failureRedirect: '/login'
+}));
+
+router.get('/logout', function (req,res){
+	req.logout();
+	res.redirect('/login');
+});
+
+function loginRequired (req, res, next) {
+	if (req.isAuthenticated()){
+		next();
+	} else {
+		res.redirect('/login');
+		console.log('error');
+	}
+}
+
+function makeUserSafe (user) {
+    var safeUser = {};
+
+    var safeKeys = ['cid', 'fullname', 'email', 'username', 'following'];
+
+    safeKeys.forEach(function (key) {
+        safeUser[key] = user[key];
+    });
+    return safeUser;
+}
+
+exports.routes = router;
+exports.required = loginRequired;
+exports.safe = makeUserSafe;
 
 
 
