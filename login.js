@@ -86,7 +86,6 @@ function loginRequired (req, res, next) {
 		next();
 	} else {
 		res.redirect('/login');
-		console.log('error');
 	}
 }
 
