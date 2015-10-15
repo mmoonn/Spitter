@@ -1,4 +1,8 @@
-var events = require('events');
+var actions = require('./actions');
 
-console.log('hello world');
-console.log(events);
+
+Object.keys(actions).forEach(function (key){
+
+	console.log(key);
+	console.log(actions[key].toString());
+})
